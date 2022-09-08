@@ -11,6 +11,7 @@ If you login successfully, the script will save the session in session file, whi
 - Prerequisites
   - python3
   - pip
+  - git (optional, you can also download the repo)
 
 ```bash
 git clone https://github.com/akynazh/INSBatchDownloader.git
