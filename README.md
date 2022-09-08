@@ -1,6 +1,6 @@
 ## Introduction
 
-You can use this script to download saved posts in your telegram account.
+You can use this script to download saved posts in your instagram account.
 
 The downloaded posts will be recorded in `record.json`, so you can remove or move the downloaded posts in the download directory, the next time you run the script, the script won't download the posts that are recorded in `record.json`.If you want to download the downloaded posts again, you can remove `record.json`.
 
