@@ -61,16 +61,18 @@ def download():
     # download saved posts
     os.chdir(root_path)
     save_count = 0
+    fail_count = 0
     for post in posts:
         if post.shortcode not in downloaded:
-            L.download_post(post, "ins_saved")
-            downloaded.append(post.shortcode)
-            save_count += 1
-
+            if L.download_post(post, "ins_saved") == True:
+                downloaded.append(post.shortcode)
+                save_count += 1
+            else:
+                fail_count += 1
             # for test
             # if save_count == 2: break
 
-    ins_log("download completes, save count: " + str(save_count) + ", pass count: " + str(posts.count - save_count))
+    ins_log("download completes, save count: " + str(save_count) + ", fail count: " + str(fail_count))
     # renew downloaded in record
     record['downloaded'] = downloaded
     
