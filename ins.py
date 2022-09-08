@@ -63,12 +63,12 @@ def download():
     save_count = 0
     for post in posts:
         if post.shortcode not in downloaded:
-            # L.download_post(post, "ins_saved")
+            L.download_post(post, "ins_saved")
             downloaded.append(post.shortcode)
             save_count += 1
 
             # for test
-            # if count == 2: break
+            # if save_count == 2: break
 
     ins_log("download completes, save count: " + str(save_count) + ", pass count: " + str(posts.count - save_count))
     # renew downloaded in record
@@ -84,7 +84,7 @@ def ins_log(msg):
     print(msg)
     log_file = root_path + "/ins-log.txt"
     with open(log_file, "a") as f:
-        f.write("********** " + time.strftime("%Y-%m-%d_%H-%M-%S_", time.localtime(time.time())) + ": " + msg + "**********\n")
+        f.write("********** " + time.strftime("%Y-%m-%d_%H-%M-%S_", time.localtime(time.time())) + ": " + msg + " **********\n")
 
 # python ins.py {login_user_name} {root_path}
 if __name__ == "__main__":
@@ -93,11 +93,12 @@ if __name__ == "__main__":
         if len(sys.argv) == 3:
             root_path = sys.argv[2]
         else:
-            root_path = "ins" # default path
+            root_path = os.getcwd() + "/ins" # default path
     except:
         print("command error: need argv")
     if not os.path.exists(root_path):
         os.makedirs(root_path)
+    ins_log("save files to " + root_path)
     session_file = root_path + "/sessions/session-" + login_user_name
     
     load_record()

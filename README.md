@@ -6,26 +6,22 @@ The downloaded posts will be recorded in `record.json`, so you can remove or mov
 
 If you login successfully, the script will save the session in session file, which will reduce the time to login next time. If you change your password, you should remove the session file and login with password again. The session file's name is session-{your-username}.
 
-## Installation
+## Installation And Usage
 
 - Prerequisites
   - python3
   - pip
 
 ```bash
+git clone https://github.com/akynazh/INSBatchDownloader.git
 pip3 install instaloader
-python ins.py {login_user_name}
+cd INSBatchDownloader
+python ins.py {login_user_name} {root_path}
 ```
-
-## Usage
 
 You should specify your {login_user_name} in the command.
 
-The {root_path} is optional, default value is "ins". The {root_path} is the directory that stores record, download files, session files and logs.
-
-```
-python ins.py {login_user_name} {root_path}
-```
+The {root_path} is optional, default value is "{current-path}/ins". The {root_path} is the directory that stores record, download files, session files and logs.
 
 ## Thanks
 
