@@ -45,6 +45,8 @@ You can just run:
 python ins.py -d {save_dir}
 ```
 
+Then the posts will be downloaded to {save_dir}/ins_saved.
+
 `-d {save_dir}` is optional, the default value is {current_dir}/ins.
 
 You may let the script run in the background and not to hang up:
@@ -72,6 +74,8 @@ wscript ins.vbs
 ## Remind
 
 If you are blocked by instagram or change your password in instagram, you should remove the session file: {save_dir}/sessions/session-{username},modify the password in record.json and then run the script.
+
+You can read the download process's information in {save_dir}/log.txt.
 
 ## Thanks
 
