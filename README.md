@@ -4,7 +4,7 @@ You can use this script to download saved posts in your instagram account.
 
 The downloaded posts will be recorded to prevent the script from downloading them again.
 
-If you login successfully, the script will save the session, which reduce the time to login next time.
+If you login successfully, the script saves the session. The next time you run the script, the script will load the session, which reduces the time to login.
 
 ## Prerequisites
 
