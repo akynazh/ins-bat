@@ -127,11 +127,13 @@ if __name__ == "__main__":
         os.makedirs(save_dir)
     # start to download
     ins = InsBatchAutoDownloader(save_dir)
+    ins.log("files will be saved to: " + save_dir + ", try to login...")
     if ins.init_flag and ins.login():
         while True:
             ins.log("### DOWNLOAD PROCESS START ###")
             ins.download()
             ins.log("### DOWNLOAD PROCESS END ###")
+            ins.log("")
             if ins.exit_flag:
                 ins.log("exit successfully")
                 break
