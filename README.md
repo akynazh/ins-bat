@@ -57,7 +57,7 @@ If you deploy the script on linux, just run:
 nohup python ins.py -d {save_dir} &
 ```
 
-If you delpy the script on window, you can use vbs, edit `ins.vbs`
+If you delpy the script on window, you can use vbs, edit `ins.vbs`:
 
 ```vb
 Dim WshShell
