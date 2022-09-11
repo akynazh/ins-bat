@@ -91,22 +91,21 @@ class InsBatchAutoDownloader:
                     log(f"download success, shortcode: {code}")
                     self.downloaded.append(code)
                     save_count += 1
-            else: # no new posts
-                log("find no new posts, wait for next try")
         except Exception as e:
             log(f"error happen: {e}")
         except KeyboardInterrupt:
             log("exit successfully")
             exit(0)
         finally:
-            log(f"download completes, total count: {total_count}, save count: {save_count}")
-            # renew record
-            self.record["downloaded"] = self.downloaded
-            try:
-                with open(self.record_file, "w") as f:
-                    json.dump(self.record, f, separators=(', ', ': '), indent=4)
-            except Exception as e:
-                log(f"renew record fail, error: {e}")
+            if save_count > 0: # if have saved new posts, log and renew record.
+                log(f"download completes, total count: {total_count}, save count: {save_count}")
+                # renew record
+                self.record["downloaded"] = self.downloaded
+                try:
+                    with open(self.record_file, "w") as f:
+                        json.dump(self.record, f, separators=(', ', ': '), indent=4)
+                except Exception as e:
+                    log(f"renew record fail, error: {e}")
 
 if __name__ == "__main__":
     # get the directory to save files
@@ -124,13 +123,9 @@ if __name__ == "__main__":
         if ins.login(): # if login successfully
             # start to download
             while True:
-                log("### DOWNLOAD PROCESS START ###")
                 ins.download()
-                log("### DOWNLOAD PROCESS END ###")
-                log("")
-                # wait for next try
                 try:
-                    time.sleep(ins.interval * 60)
+                    time.sleep(ins.interval * 60) # wait for next try
                 except KeyboardInterrupt:
                     log("exit successfully")
                     break
