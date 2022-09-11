@@ -61,14 +61,14 @@ class InsBatchAutoDownloader:
             log("login successfully")
             return True
         except Exception as e:
-            log(f"login fail, error: {e}")
+            log(f"fail to login, error: {e}")
             return False
         except KeyboardInterrupt:
             log("exit successfully")
             exit(0)
 
     def download(self):
-        save_count = 0
+        saved_count = 0
         total_count = 0
         try:
             # get profile
@@ -85,27 +85,27 @@ class InsBatchAutoDownloader:
                 log("find new posts, start to download...")
                 os.chdir(self.save_dir)
                 for code in new_posts_code:
-                    # if save_count == 2: break # just for test
+                    # if saved_count == 2: break # just for test
                     post = instaloader.Post.from_shortcode(self.loader.context, code)
                     self.loader.download_post(post, "ins_saved")
-                    log(f"download success, shortcode: {code}")
+                    log(f"download successfully, shortcode: {code}")
                     self.downloaded.append(code)
-                    save_count += 1
+                    saved_count += 1
         except Exception as e:
-            log(f"error happen: {e}")
+            log(f"error happens: {e}")
         except KeyboardInterrupt:
             log("exit successfully")
             exit(0)
         finally:
-            if save_count > 0: # if have saved new posts, log and renew record.
-                log(f"download completes, total count: {total_count}, save count: {save_count}")
+            if saved_count > 0: # if have saved new posts, log and renew record.
+                log(f"download completed, total count: {total_count}, saved count: {saved_count}")
                 # renew record
                 self.record["downloaded"] = self.downloaded
                 try:
                     with open(self.record_file, "w") as f:
                         json.dump(self.record, f, separators=(', ', ': '), indent=4)
                 except Exception as e:
-                    log(f"renew record fail, error: {e}")
+                    log(f"fail to renew the record, error: {e}")
 
 if __name__ == "__main__":
     # get the directory to save files
