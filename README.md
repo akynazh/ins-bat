@@ -4,8 +4,6 @@ You can use this script to download saved posts in your instagram account.
 
 The downloaded posts will be recorded to prevent the script from downloading them again.
 
-If you login successfully, the script saves the session. The next time you run the script, the script will load the session, which reduces the time to login.
-
 ## Prerequisites
 
 - python3
@@ -49,7 +47,7 @@ Then the posts will be downloaded to `{save_dir}/ins_saved`.
 
 `-d {save_dir}` is optional, the default value is `{current_dir}/ins`.
 
-You may let the script run in the background and not to hang up:
+You may let the script run in the background and not to hang up when closing the terminal:
 
 If you deploy the script on linux, just run:
 
@@ -73,7 +71,9 @@ wscript ins.vbs
 
 ## Remind
 
-If you are blocked by instagram or change your password in instagram, you should remove the session file: `{save_dir}/sessions/session-{username}`,modify the password in `record.json `and then run the script.
+If you are blocked by instagram or find that you can not get the correct data, try to restart the script.
+
+If you change your password in instagram, you should stop the script, modify the password in `record.json` and then run the script again.
 
 You can read the download process's information in `{save_dir}/log.txt`.
 
