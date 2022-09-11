@@ -94,10 +94,6 @@ class InsBatchAutoDownloader:
                         log(f"download success, shortcode: {code}")
                         self.downloaded.append(code)
                         save_count += 1
-
-                        # this is for test
-                        if save_count == 2: break
-
                     else:
                         log(f"download fail, shortcode: {code}")
                         fail_count += 1
