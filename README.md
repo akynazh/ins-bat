@@ -75,7 +75,7 @@ If you are blocked by instagram or find that you can not get the correct data, t
 
 If you change your password in instagram, you should stop the script, modify the password in `record.json` and then run the script again.
 
-You can read the download process's information in `{save_dir}/log.txt`.
+You can read log in `{save_dir}/log.txt`.
 
 ## Thanks
 
