@@ -8,6 +8,7 @@ The downloaded posts will be recorded to prevent the script from downloading the
 
 - python3
 - pip3
+- proxy (optional, only if instagram is blocked in your area)
 
 ## Installation
 
