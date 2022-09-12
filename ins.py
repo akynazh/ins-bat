@@ -31,7 +31,7 @@ def load_record(save_dir):
 def log(msg):
     global save_dir
 
-    mmsg = "********** " + time.strftime("%Y-%m-%d_%H-%M-%S_", time.localtime(time.time())) + ": " + msg
+    mmsg = "********** " + time.strftime("%Y/%m/%d %H:%M:%S", time.localtime(time.time())) + ": " + msg
     with open(save_dir + "/log.txt", "a") as f:
         if msg == "":
             print()
