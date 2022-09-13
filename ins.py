@@ -31,7 +31,7 @@ def load_record(save_dir):
 def log(msg):
     global save_dir
 
-    mmsg = "********** " + time.strftime("%Y/%m/%d %H:%M:%S", time.localtime(time.time())) + ": " + msg
+    mmsg = "[" + time.strftime("%Y/%m/%d %H:%M:%S", time.localtime(time.time())) + "] " + msg
     with open(save_dir + "/log.txt", "a") as f:
         if msg == "":
             print()
@@ -53,6 +53,7 @@ class InsBatchAutoDownloader:
         self.password = self.record["password"]
         self.interval = self.record["interval"]
         self.downloaded = self.record["downloaded"]
+        self.error_count = 0
 
     def login(self):
         log("try to login as " + self.username + "...")
@@ -91,8 +92,10 @@ class InsBatchAutoDownloader:
                     log(f"download successfully, shortcode: {code}")
                     self.downloaded.append(code)
                     saved_count += 1
+                self.error_count = 0
         except Exception as e:
             log(f"error happens: {e}")
+            self.error_count += 1
         except KeyboardInterrupt:
             log("exit successfully")
             exit(0)
@@ -124,6 +127,13 @@ if __name__ == "__main__":
             # start to download
             while True:
                 ins.download()
+                if ins.error_count >= 3:
+                    log("download error count >= 3, try to login again")
+                    while not ins.login(): # login fail
+                        log("wait for 60s and try to login again...")
+                        time.sleep(60)
+                        continue
+                    ins.error_count = 0
                 try:
                     time.sleep(ins.interval * 60) # wait for next try
                 except KeyboardInterrupt:
