@@ -131,7 +131,11 @@ if __name__ == "__main__":
                     log("download error count >= 3, try to login again")
                     while not ins.login(): # login fail
                         log("wait for 60s and try to login again...")
-                        time.sleep(60)
+                        try:
+                            time.sleep(60)
+                        except KeyboardInterrupt:
+                            log("exit successfully")
+                            exit(0)
                         continue
                     ins.error_count = 0
                 try:
