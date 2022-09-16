@@ -41,7 +41,7 @@ pip3 install instaloader
 You can just run:
 
 ```
-python ins.py -d {save_dir}
+python3 ins.py -d {save_dir}
 ```
 
 Then the posts will be downloaded to `{save_dir}/ins_saved`.
@@ -53,7 +53,7 @@ You may let the script run in the background and not to hang up when closing the
 If you deploy the script on linux, just run:
 
 ```bash
-nohup python ins.py -d {save_dir} &
+nohup python3 ins.py -d {save_dir} &
 ```
 
 If you delpy the script on window, you can use vbs, edit `ins.vbs`:
