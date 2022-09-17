@@ -4,6 +4,8 @@ You can use this script to download saved posts in your instagram account.
 
 The downloaded posts will be recorded to prevent the script from downloading them again.
 
+Optionally, you can set a telegram bot to send you the messages about the downloading process.
+
 ## Prerequisites
 
 - python3
@@ -15,6 +17,7 @@ The downloaded posts will be recorded to prevent the script from downloading the
 ```bash
 git clone https://github.com/akynazh/INSBatchDownloader.git # or download this repo
 pip3 install instaloader
+pip3 install pyTelegramBotAPI # optional, do it if you need a telegram bot to notify you
 ```
 
 ## Usage
@@ -25,6 +28,8 @@ pip3 install instaloader
 - username: your instagram username
 - password: your instagram password
 - interval: download interval(unit: minute), recommand >= 15 minutes
+- tg_bot_token: optional, your telegram bot's token
+- tg_user_id: optional, your telegram id
 - downloaded: the downloaded posts' shortcodes
 
 ```json
