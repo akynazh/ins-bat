@@ -89,9 +89,6 @@ class InsBatchAutoDownloader:
         finally:
             if saved_count > 0:  # if have saved new posts, log and renew record.
                 LOG.info(
-                    f'[INSBATCHAUTODOWNLOADER]: download completed, total count: {total_count}, saved count: {saved_count}'
-                )
-                tg_bot_send_msg(
                     f'download completed, total count: {total_count}, saved count: {saved_count}'
                 )
                 # renew record
