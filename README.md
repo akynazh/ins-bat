@@ -37,6 +37,8 @@ pip3 install pyTelegramBotAPI # optional, do it if you need a telegram bot to no
     "username": "", 
     "password": "", 
     "interval": 15, 
+    "tg_bot_token": "", 
+    "tg_user_id": "", 
     "downloaded": []
 }
 ```
