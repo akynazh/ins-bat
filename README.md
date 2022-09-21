@@ -4,6 +4,8 @@ You can use this script to download saved posts in your instagram account.
 
 The downloaded posts will be recorded to prevent the script from downloading them again.
 
+After your first login, the script saves the session to file and the next time you login, the script will load the session from file.
+
 Optionally, you can set a telegram bot to send you the messages about the downloading process.
 
 ## Prerequisites
@@ -79,9 +81,9 @@ wscript ins.vbs
 
 ## Remind
 
-If you are blocked by instagram or find that you can not get the correct data, try to restart the script.
+If you change your password in instagram, you should stop the script, modify the password in `{save_dir}/record.json` and remove the session file `{save_dir}/session-{username}`, and then restart the script.
 
-If you change your password in instagram, you should stop the script, modify the password in `record.json` and then run the script again.
+If you are blocked by meta unfortunately, you may stop the script and try to restart the script after a few days.
 
 You can read log in `{save_dir}/log.txt`.
 

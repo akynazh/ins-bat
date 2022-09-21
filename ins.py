@@ -5,6 +5,7 @@ import time
 import argparse
 import logging
 import requests
+import instaloader.exceptions as ins_exceptions
 
 
 class Logger:
@@ -39,14 +40,27 @@ class InsBatchAutoDownloader:
         self.interval = self.record['interval']
         self.downloaded = self.record['downloaded']
         self.error_count = 0
+        self.session_file = f'{SAVE_DIR}/session-{self.username}'
+        self.first_download = True
 
     def login(self):
         LOG.info(f'try to login as {self.username}...')
         try:
-            self.loader.login(self.username, self.password)
+            if os.path.exists(self.session_file):
+                LOG.info(f'find session file: {self.session_file}, try to load session...')
+                self.loader.load_session_from_file(self.username, self.session_file)
+            else:
+                self.loader.login(self.username, self.password)
+                self.loader.save_session_to_file(self.session_file)
             LOG.info('login successfully')
             return True
-        except Exception as e:
+        except ins_exceptions.InvalidArgumentException:
+            LOG.info('username does not exist')
+            exit(0)
+        except ins_exceptions.BadCredentialsException:
+            LOG.info('password is wrong, try to remove the session file or modify your password')
+            exit(0)
+        except ins_exceptions.ConnectionException as e:
             LOG.error(f'fail to login, error: {e}')
             return False
         except KeyboardInterrupt:
@@ -101,6 +115,10 @@ class InsBatchAutoDownloader:
                                   indent=4)
                 except Exception as e:
                     LOG.error(f'fail to renew the record, error: {e}')
+            else:
+                if self.first_download:
+                    self.first_download = False
+                    LOG.info(f'find no new posts to download, go to sleep for {self.interval} minutes...')
 
 
 def load_record():
@@ -122,6 +140,8 @@ def load_record():
                     'username': '',
                     'password': '',
                     'interval': 15,
+                    "tg_bot_token": "",
+                    "tg_user_id": "",
                     'downloaded': []
                 }
                 json.dump(default_record, f, separators=(', ', ': '), indent=4)
@@ -146,9 +166,9 @@ def tg_bot_send_msg(msg):
     if r.status_code != 200: LOG.error('telegram bot fails to send messages')
 
 
-def ok_sleep(seconds):
+def ok_sleep(minutes):
     try:
-        time.sleep(seconds)
+        time.sleep(60 * minutes)
     except KeyboardInterrupt:
         LOG.info('exit successfully')
         exit(0)
@@ -191,14 +211,17 @@ if __name__ == '__main__':
                     login_fail_count = 0
                     while not ins.login():  # fail to login
                         login_fail_count += 1
-                        if login_fail_count >= 5:  # always fail to login, exit
-                            LOG.error('login error count >= 5, exit')
-                            tg_bot_send_msg(
-                                '[INSBATCHAUTODOWNLOADER]: login error count >= 5, exit, please fix it by yourself.'
-                            )
-                            exit(0)
+                        if login_fail_count >= 3:  # always fail to login
+                            LOG.error('login error count >= 3, try to remove session and login again')
+                            if os.path.exists(ins.session_file): # try to remove session
+                                os.remove(ins.session_file)
+                            else: # totally fail to login
+                                tg_bot_send_msg(
+                                    '[INSBATCHAUTODOWNLOADER]: fail to login, please fix the fucking problem by yourself.'
+                                )
+                                exit(0)
                         LOG.info(
-                            'wait for 10 minutes and try to login again...')
-                        ok_sleep(10 * 60)
+                            'fail to login, wait for 15 minutes and try to login again...')
+                        ok_sleep(15)
                     ins.error_count = 0  # login successfully, set error count to 0 again
-                ok_sleep(ins.interval * 60)
+                ok_sleep(ins.interval)
