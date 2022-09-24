@@ -93,7 +93,7 @@ class InsBatchAutoDownloader:
                     LOG.info(f'download successfully, shortcode: {code}')
                     self.downloaded.append(code)
                     saved_count += 1
-                self.error_count = 0
+            self.error_count = 0
         except Exception as e:
             LOG.error(f'error happens: {e}')
             self.error_count += 1
@@ -206,8 +206,8 @@ if __name__ == '__main__':
             while True:
                 ins.download()
                 # too many errors, login again
-                if ins.error_count >= 4:
-                    LOG.warn('download error count >= 4, try to login again')
+                if ins.error_count >= 3:
+                    LOG.warn('download error count >= 3, try to login again')
                     login_fail_count = 0
                     while not ins.login():  # fail to login
                         login_fail_count += 1
@@ -216,6 +216,7 @@ if __name__ == '__main__':
                             if os.path.exists(ins.session_file): # try to remove session
                                 os.remove(ins.session_file)
                             else: # totally fail to login
+                                LOG.error('fail to login, please fix the fucking problem by yourself')
                                 tg_bot_send_msg(
                                     '[INSBATCHAUTODOWNLOADER]: fail to login, please fix the fucking problem by yourself.'
                                 )
@@ -223,5 +224,8 @@ if __name__ == '__main__':
                         LOG.info(
                             'fail to login, wait for 15 minutes and try to login again...')
                         ok_sleep(15)
-                    ins.error_count = 0  # login successfully, set error count to 0 again
+                if ins.error_count >= 5:
+                    LOG.error('fail to download, please fix the fucking problem by yourself')
+                    tg_bot_send_msg('[INSBATCHAUTODOWNLOADER]: fail to download, please fix the fucking problem by yourself.')
+                    exit(0)
                 ok_sleep(ins.interval)
