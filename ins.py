@@ -56,15 +56,15 @@ class InsBatchAutoDownloader:
             LOG.info('login successfully')
             return True
         except ins_exceptions.InvalidArgumentException:
-            LOG.warn('username does not exist')
+            LOG.error('username does not exist')
             return False
         except ins_exceptions.BadCredentialsException:
-            LOG.warn(
+            LOG.error(
                 'password is wrong, try to remove the session file or modify your password'
             )
             return False
         except Exception as e:
-            LOG.error(f'fail to login, error: {e}')
+            LOG.error(f'error occurred: {e}')
             return False
         except KeyboardInterrupt:
             LOG.info('exit successfully')
@@ -99,12 +99,12 @@ class InsBatchAutoDownloader:
                     saved_count += 1
         except Exception as e:
             error_occurred = True
-            LOG.error(f'error happens: {e}')
+            LOG.error(f'error occurred: {e}')
         except KeyboardInterrupt:
             LOG.info('exit successfully')
             exit(0)
         finally:
-            msg = f'download completed, total count: {total_count}, saved count: {saved_count}, error occurred: {error_occurred} ^-^'
+            msg = f'[Instagram] completed, total count: {total_count}, saved count: {saved_count}, error occurred: {error_occurred} ^-^'
             LOG.info(msg)
             tg_bot_send_msg(msg)
             if saved_count > 0:  # if have saved new posts, log and renew record.
@@ -197,5 +197,7 @@ if __name__ == '__main__':
         if ins.login():  # if login successfully
             ins.download()  # start to download
         else:
-            tg_bot_send_msg('fail to login =_=')
+            msg = '[Instagram] fail to login =_='
+            LOG.error(msg)
+            tg_bot_send_msg(msg)
     LOG.info('###  END  ###')
