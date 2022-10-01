@@ -6,7 +6,7 @@ The downloaded posts will be recorded to prevent the script from downloading the
 
 After your first login, the script saves the session to file and the next time you login, the script will load the session from file.
 
-Optionally, you can set a telegram bot to send you the messages about the downloading process.
+Optionally, you can set a telegram bot to notify you about the downloading process, which is helpful if you set a timed task.
 
 ## Prerequisites
 
@@ -29,7 +29,6 @@ pip3 install pyTelegramBotAPI # optional, do it if you need a telegram bot to no
 - `{save_dir}` is the directory where you save files.
 - username: your instagram username
 - password: your instagram password
-- interval: download interval(unit: minute), recommand >= 15 minutes
 - tg_bot_token: optional, your telegram bot's token
 - tg_user_id: optional, your telegram id
 - downloaded: the downloaded posts' shortcodes
@@ -38,52 +37,36 @@ pip3 install pyTelegramBotAPI # optional, do it if you need a telegram bot to no
 {
     "username": "", 
     "password": "", 
-    "interval": 15, 
     "tg_bot_token": "", 
     "tg_user_id": "", 
     "downloaded": []
 }
 ```
 
-### Start the script
+### Run the script
+
+About `ins.py`:
+
+```
+usage: ins.py [-h] [--dir DIR] [--update]
+
+optional arguments:
+  -h, --help  show this help message and exit
+  --dir DIR   the directory to save files, should be absolute path
+  --update    if `--update` exists, remove the old session file
+```
 
 You can just run:
 
 ```
-python3 ins.py -d {save_dir}
+python3 ins.py --dir {save_dir}
 ```
 
-Then the posts will be downloaded to `{save_dir}/ins_saved`.
+Then the posts will be saved in `{save_dir}/ins_saved`.
 
-`-d {save_dir}` is optional, the default value is `{current_dir}/ins`.
+`--dir {save_dir}` is optional, the default value is `{current_dir}/ins`.
 
-You may let the script run in the background and not to hang up when closing the terminal:
-
-If you deploy the script on linux, just run:
-
-```bash
-nohup python3 ins.py -d {save_dir} &
-```
-
-If you delpy the script on window, you can use vbs, edit `ins.vbs`:
-
-```vb
-Dim WshShell
-Set WshShell=WScript.CreateObject("WScript.Shell")
-iReturnCode=WshShell.Run("python3 ins.py -d {save_dir}", 0, TRUE)
-```
-
-then run:
-
-```
-wscript ins.vbs
-```
-
-## Remind
-
-If you change your password in instagram, you should stop the script, modify the password in `{save_dir}/record.json` and remove the session file `{save_dir}/session-{username}`, and then restart the script.
-
-If you are blocked by meta unfortunately, you may stop the script and try to restart the script after a few days.
+`--update` is optional too, if you fail to download new posts or load the session, you may add it to update the session.
 
 You can read log in `{save_dir}/log.txt`.
 

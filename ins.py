@@ -1,7 +1,6 @@
 import instaloader
 import json
 import os
-import time
 import argparse
 import logging
 import requests
@@ -37,30 +36,34 @@ class InsBatchAutoDownloader:
         self.record = RECORD
         self.username = self.record['username']
         self.password = self.record['password']
-        self.interval = self.record['interval']
         self.downloaded = self.record['downloaded']
-        self.error_count = 0
         self.session_file = f'{SAVE_DIR}/session-{self.username}'
-        self.first_download = True
 
     def login(self):
         LOG.info(f'try to login as {self.username}...')
+        if os.path.exists(self.session_file) and REMOVE_SESSION:
+            os.remove(self.session_file)
         try:
             if os.path.exists(self.session_file):
-                LOG.info(f'find session file: {self.session_file}, try to load session...')
-                self.loader.load_session_from_file(self.username, self.session_file)
+                LOG.info(
+                    f'find session file: {self.session_file}, try to load session...'
+                )
+                self.loader.load_session_from_file(self.username,
+                                                   self.session_file)
             else:
                 self.loader.login(self.username, self.password)
                 self.loader.save_session_to_file(self.session_file)
             LOG.info('login successfully')
             return True
         except ins_exceptions.InvalidArgumentException:
-            LOG.info('username does not exist')
-            exit(0)
+            LOG.warn('username does not exist')
+            return False
         except ins_exceptions.BadCredentialsException:
-            LOG.info('password is wrong, try to remove the session file or modify your password')
-            exit(0)
-        except ins_exceptions.ConnectionException as e:
+            LOG.warn(
+                'password is wrong, try to remove the session file or modify your password'
+            )
+            return False
+        except Exception as e:
             LOG.error(f'fail to login, error: {e}')
             return False
         except KeyboardInterrupt:
@@ -70,6 +73,7 @@ class InsBatchAutoDownloader:
     def download(self):
         saved_count = 0
         total_count = 0
+        error_occurred = False
         try:
             # get profile
             profile = instaloader.Profile.from_username(
@@ -93,18 +97,17 @@ class InsBatchAutoDownloader:
                     LOG.info(f'download successfully, shortcode: {code}')
                     self.downloaded.append(code)
                     saved_count += 1
-            self.error_count = 0
         except Exception as e:
+            error_occurred = True
             LOG.error(f'error happens: {e}')
-            self.error_count += 1
         except KeyboardInterrupt:
             LOG.info('exit successfully')
             exit(0)
         finally:
+            msg = f'download completed, total count: {total_count}, saved count: {saved_count}, error occurred: {error_occurred} ^-^'
+            LOG.info(msg)
+            tg_bot_send_msg(msg)
             if saved_count > 0:  # if have saved new posts, log and renew record.
-                LOG.info(
-                    f'download completed, total count: {total_count}, saved count: {saved_count}'
-                )
                 # renew record
                 self.record['downloaded'] = self.downloaded
                 try:
@@ -115,63 +118,51 @@ class InsBatchAutoDownloader:
                                   indent=4)
                 except Exception as e:
                     LOG.error(f'fail to renew the record, error: {e}')
-            else:
-                if self.first_download:
-                    self.first_download = False
-                    LOG.info(f'find no new posts to download, go to sleep for {self.interval} minutes...')
-
 
 def load_record():
+    global RECORD
     try:
         if os.path.exists(RECORD_FILE):
             with open(RECORD_FILE, 'r') as f:
-                record = json.load(f)
-            for key in ['username', 'password', 'interval', 'downloaded']:
-                if key not in record:
+                RECORD = json.load(f)
+            for key in ['username', 'password', 'downloaded']:
+                if key not in RECORD:
                     LOG.error(f'fail to load record: lost key: {key}')
-                    return False, None
-            if isinstance(record['downloaded'], list) and str(record['username']).strip() != '' and \
-                str(record['password']).strip() != '' and int(record['interval']) >= 0:
-                return True, record
+                    return False
+            if isinstance(RECORD['downloaded'], list) and str(RECORD['username']).strip() != '' and \
+                str(RECORD['password']).strip() != '':
+                return True
         else:  # record file does not exist, create and write basic data
             LOG.error(f'can not find {RECORD_FILE}, create it')
             with open(RECORD_FILE, 'w') as f:
                 default_record = {
                     'username': '',
                     'password': '',
-                    'interval': 15,
                     "tg_bot_token": "",
                     "tg_user_id": "",
                     'downloaded': []
                 }
                 json.dump(default_record, f, separators=(', ', ': '), indent=4)
                 LOG.error('please edit record.json first')
-            return False, None
+            return False
     except Exception as e:
         LOG.error(f'fail to load record, error: {e}')
-        return False, None
+        return False
 
 
 def tg_bot_send_msg(msg):
     tg_bot_token = RECORD['tg_bot_token'] if 'tg_bot_token' in RECORD else ''
     tg_user_id = RECORD['tg_user_id'] if 'tg_user_id' in RECORD else ''
-    if tg_bot_token == '' and tg_user_id == '':
-        LOG.info('did not set a telegram bot')
-        return
-    r = requests.get(f'https://api.telegram.org/bot{tg_bot_token}/sendMessage',
-                     params={
-                         'text': f'{msg}',
-                         'chat_id': f'{tg_user_id}'
-                     })
-    if r.status_code != 200: LOG.error('telegram bot fails to send messages')
-
-
-def ok_sleep(minutes):
-    try:
-        time.sleep(60 * minutes)
-    except KeyboardInterrupt:
-        LOG.info('exit successfully')
-        exit(0)
+    if tg_bot_token != '' and tg_user_id != '':
+        r = requests.get(
+            f'https://api.telegram.org/bot{tg_bot_token}/sendMessage',
+            params={
+                'text': f'{msg}',
+                'chat_id': f'{tg_user_id}'
+            })
+        ok = r.json()['ok']
+        if not ok:
+            LOG.error(f'tg_bot: fail to send msg')
 
 
 if __name__ == '__main__':
@@ -179,14 +170,18 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument(
         '--dir',
-        '-d',
         type=str,
-        default=os.getcwd(),
+        default=f'{os.getcwd()}/ins',
         help='the directory to save files, should be absolute path')
+    parser.add_argument(
+        '--update',
+        action='store_true',  # default False
+        help='if `--update` exists, remove the old session file')
     args = parser.parse_args()
 
     # set basic values
     SAVE_DIR = args.dir
+    REMOVE_SESSION = args.update
     RECORD_FILE = SAVE_DIR + '/record.json'
     LOG_FILE = SAVE_DIR + '/ins_log.txt'
     if not os.path.exists(SAVE_DIR):
@@ -194,38 +189,13 @@ if __name__ == '__main__':
 
     # initial logger
     LOG = Logger(log_file=LOG_FILE, log_level=logging.INFO).logger
-    LOG.info('[INSBATCHAUTODOWNLOADER-STARTED]')
 
-    # load record
-    load_success, RECORD = load_record()
-    if load_success:  # load successfully
-        # initial InsBatchAutoDownloader
-        ins = InsBatchAutoDownloader()
+    LOG.info('### START ###')
+    RECORD = {}
+    if load_record():  # load successfully
+        ins = InsBatchAutoDownloader()  # initial InsBatchAutoDownloader
         if ins.login():  # if login successfully
-            # start to download
-            while True:
-                ins.download()
-                # too many errors, login again
-                if ins.error_count >= 3:
-                    LOG.warn('download error count >= 3, try to login again')
-                    login_fail_count = 0
-                    while not ins.login():  # fail to login
-                        login_fail_count += 1
-                        if login_fail_count >= 3:  # always fail to login
-                            LOG.error('login error count >= 3, try to remove session and login again')
-                            if os.path.exists(ins.session_file): # try to remove session
-                                os.remove(ins.session_file)
-                            else: # totally fail to login
-                                LOG.error('fail to login, please fix the fucking problem by yourself')
-                                tg_bot_send_msg(
-                                    '[INSBATCHAUTODOWNLOADER]: fail to login, please fix the fucking problem by yourself.'
-                                )
-                                exit(0)
-                        LOG.info(
-                            'fail to login, wait for 15 minutes and try to login again...')
-                        ok_sleep(15)
-                if ins.error_count >= 5:
-                    LOG.error('fail to download, please fix the fucking problem by yourself')
-                    tg_bot_send_msg('[INSBATCHAUTODOWNLOADER]: fail to download, please fix the fucking problem by yourself.')
-                    exit(0)
-                ok_sleep(ins.interval)
+            ins.download()  # start to download
+        else:
+            tg_bot_send_msg('fail to login =_=')
+    LOG.info('###  END  ###')
