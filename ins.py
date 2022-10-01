@@ -119,6 +119,7 @@ class InsBatchAutoDownloader:
                 except Exception as e:
                     LOG.error(f'fail to renew the record, error: {e}')
 
+
 def load_record():
     global RECORD
     try:
@@ -193,6 +194,10 @@ if __name__ == '__main__':
     LOG.info('### START ###')
     RECORD = {}
     if load_record():  # load successfully
+        if str(RECORD['proxy']).strip() != '':# add proxy
+            proxy = RECORD['proxy']
+            os.environ['http_proxy'] = proxy
+            os.environ['https_proxy'] = proxy
         ins = InsBatchAutoDownloader()  # initial InsBatchAutoDownloader
         if ins.login():  # if login successfully
             ins.download()  # start to download
