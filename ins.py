@@ -191,7 +191,6 @@ if __name__ == '__main__':
     # initial logger
     LOG = Logger(log_file=LOG_FILE, log_level=logging.INFO).logger
 
-    LOG.info('### START ###')
     RECORD = {}
     if load_record():  # load successfully
         if str(RECORD['proxy']).strip() != '':# add proxy
@@ -205,4 +204,3 @@ if __name__ == '__main__':
             msg = '[Instagram] fail to login =_='
             LOG.error(msg)
             tg_bot_send_msg(msg)
-    LOG.info('###  END  ###')
