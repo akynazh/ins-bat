@@ -8,6 +8,8 @@ After your first login, the script saves the session to file and the next time y
 
 Optionally, you can set a telegram bot to notify you about the downloading process, which is helpful if you set a timed task.
 
+You can set a timedtask like the crontab on linux to execute this script regularly.
+
 ## Prerequisites
 
 - python3
