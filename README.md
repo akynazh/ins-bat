@@ -18,7 +18,7 @@ You can set a timedtask like the crontab on linux to execute this script regular
 ## Installation
 
 ```bash
-git clone https://github.com/akynazh/INSBatchDownloader.git # or download this repo
+git clone https://github.com/akynazh/ins-bat # or download this repo
 pip3 install instaloader
 pip3 install pyTelegramBotAPI # optional, do it if you need a telegram bot to notify you
 ```
