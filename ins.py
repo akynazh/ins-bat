@@ -1,6 +1,7 @@
 import instaloader
 import json
 import os
+import sys
 import argparse
 import logging
 import requests
@@ -139,6 +140,9 @@ def load_record():
             if isinstance(RECORD['downloaded'], list) and str(RECORD['username']).strip() != '' and \
                 str(RECORD['password']).strip() != '':
                 return True
+            else:
+                LOG.error('fail to load record, error: incorrect format')
+                return False
         else:  # record file does not exist, create and write basic data
             LOG.error(f'can not find {RECORD_FILE}, create it')
             with open(RECORD_FILE, 'w') as f:
@@ -178,7 +182,7 @@ if __name__ == '__main__':
     parser.add_argument(
         '--dir',
         type=str,
-        default=f'{os.getcwd()}/ins',
+        default=f'{sys.path[0]}',
         help='the directory to save files, should be absolute path')
     parser.add_argument(
         '--update',

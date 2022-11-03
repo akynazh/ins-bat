@@ -67,7 +67,7 @@ python3 ins.py --dir {save_dir}
 
 Then the posts will be saved in `{save_dir}/ins_saved`.
 
-`--dir {save_dir}` is optional, the default value is `{current_dir}/ins`.
+`--dir {save_dir}` is optional, the default value of {save_dir} is the directory where `ins.py` locates in.
 
 `--update` is optional too, if you fail to download new posts or load the session, you may add it to update the session.
 
