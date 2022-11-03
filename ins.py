@@ -4,6 +4,7 @@ import os
 import argparse
 import logging
 import requests
+import threading
 import instaloader.exceptions as ins_exceptions
 
 
@@ -38,6 +39,8 @@ class InsBatchAutoDownloader:
         self.password = self.record['password']
         self.downloaded = self.record['downloaded']
         self.session_file = f'{SAVE_DIR}/session-{self.username}'
+        self.lock = threading.Lock()
+        self.saved_count = 0
 
     def login(self):
         LOG.info(f'try to login as {self.username}...')
@@ -45,9 +48,7 @@ class InsBatchAutoDownloader:
             os.remove(self.session_file)
         try:
             if os.path.exists(self.session_file):
-                LOG.info(
-                    f'find session file: {self.session_file}, try to load session...'
-                )
+                LOG.info(f'find session file: {self.session_file}, try to load session...')
                 self.loader.load_session_from_file(self.username,
                                                    self.session_file)
             else:
@@ -59,9 +60,7 @@ class InsBatchAutoDownloader:
             LOG.error('username does not exist')
             return False
         except ins_exceptions.BadCredentialsException:
-            LOG.error(
-                'password is wrong, try to remove the session file or modify your password'
-            )
+            LOG.error('password is wrong, try to remove the session file or modify your password')
             return False
         except Exception as e:
             LOG.error(f'error occurred: {e}')
@@ -69,34 +68,41 @@ class InsBatchAutoDownloader:
         except KeyboardInterrupt:
             LOG.info('exit successfully')
             exit(0)
+            
+    def download_from_shortcode(self, shortcode):
+        LOG.info(f'thread-shortcode-{shortcode}: start')
+        post = instaloader.Post.from_shortcode(self.loader.context, shortcode)
+        self.loader.download_post(post, 'ins_saved')
+        LOG.info(f'download successfully, shortcode: {shortcode}')
+        self.lock.acquire()
+        self.downloaded.append(shortcode)
+        self.saved_count += 1
+        self.lock.release()
 
     def download(self):
-        saved_count = 0
         total_count = 0
         error_occurred = False
         try:
             # get profile
-            profile = instaloader.Profile.from_username(
-                self.loader.context, self.username)
+            profile = instaloader.Profile.from_username(self.loader.context, self.username)
             # get saved posts now
             now_posts = profile.get_saved_posts()
             now_posts_code = []
             for post in now_posts:
                 now_posts_code.append(post.shortcode)
             # get new posts_code
-            new_posts_code = list(
-                set(now_posts_code).difference(set(self.downloaded)))
+            new_posts_code = list(set(now_posts_code).difference(set(self.downloaded)))
             if len(new_posts_code) > 0:  # have new posts
                 total_count = len(new_posts_code)
                 LOG.info('find new posts, start to download...')
                 os.chdir(SAVE_DIR)
-                for code in new_posts_code:
-                    post = instaloader.Post.from_shortcode(
-                        self.loader.context, code)
-                    self.loader.download_post(post, 'ins_saved')
-                    LOG.info(f'download successfully, shortcode: {code}')
-                    self.downloaded.append(code)
-                    saved_count += 1
+                download_threads = []
+                for shortcode in new_posts_code:
+                    t = threading.Thread(target=self.download_from_shortcode, args=(shortcode,))
+                    download_threads.append(t)
+                    t.start()
+                for t in download_threads:
+                    t.join()
         except Exception as e:
             error_occurred = True
             LOG.error(f'error occurred: {e}')
@@ -104,10 +110,10 @@ class InsBatchAutoDownloader:
             LOG.info('exit successfully')
             exit(0)
         finally:
-            msg = f'[Instagram] completed, total count: {total_count}, saved count: {saved_count}, error occurred: {error_occurred} ^-^'
+            msg = f'[Instagram] completed, total count: {total_count}, saved count: {self.saved_count}, error occurred: {error_occurred} ^-^'
             LOG.info(msg)
             tg_bot_send_msg(msg)
-            if saved_count > 0:  # if have saved new posts, log and renew record.
+            if self.saved_count > 0:  # if have saved new posts, log and renew record.
                 # renew record
                 self.record['downloaded'] = self.downloaded
                 try:
@@ -140,7 +146,7 @@ def load_record():
                     'username': '',
                     'password': '',
                     "tg_bot_token": "",
-                    "tg_user_id": "",
+                    "tg_chat_id": "",
                     'downloaded': []
                 }
                 json.dump(default_record, f, separators=(', ', ': '), indent=4)
@@ -153,13 +159,13 @@ def load_record():
 
 def tg_bot_send_msg(msg):
     tg_bot_token = RECORD['tg_bot_token'] if 'tg_bot_token' in RECORD else ''
-    tg_user_id = RECORD['tg_user_id'] if 'tg_user_id' in RECORD else ''
-    if tg_bot_token != '' and tg_user_id != '':
+    tg_chat_id = RECORD['tg_chat_id'] if 'tg_chat_id' in RECORD else ''
+    if tg_bot_token != '' and tg_chat_id != '':
         r = requests.get(
             f'https://api.telegram.org/bot{tg_bot_token}/sendMessage',
             params={
-                'text': f'{msg}',
-                'chat_id': f'{tg_user_id}'
+                'text': msg,
+                'chat_id': tg_chat_id
             })
         ok = r.json()['ok']
         if not ok:
