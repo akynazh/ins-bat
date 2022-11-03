@@ -31,7 +31,7 @@ pip3 install pyTelegramBotAPI # optional, do it if you need a telegram bot to no
 - username: your instagram username
 - password: your instagram password
 - tg_bot_token: optional, your telegram bot's token
-- tg_user_id: optional, your telegram id
+- tg_chat_id: optional, user id or group id
 - proxy: optional, set your proxy address, such as `http://127.0.0.1:7890` (you can also set your proxy to environment variable)
 - downloaded: the downloaded posts' shortcodes
 
@@ -40,7 +40,7 @@ pip3 install pyTelegramBotAPI # optional, do it if you need a telegram bot to no
     "username": "", 
     "password": "", 
     "tg_bot_token": "", 
-    "tg_user_id": "",
+    "tg_chat_id": "",
     "proxy": "",
     "downloaded": []
 }
