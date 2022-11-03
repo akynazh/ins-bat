@@ -181,11 +181,13 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument(
         '--dir',
+        '-d',
         type=str,
         default=f'{sys.path[0]}',
         help='the directory to save files, should be absolute path')
     parser.add_argument(
         '--update',
+        '-u',
         action='store_true',  # default False
         help='if `--update` exists, remove the old session file')
     args = parser.parse_args()

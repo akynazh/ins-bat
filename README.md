@@ -53,10 +53,10 @@ About `ins.py`:
 ```
 usage: ins.py [-h] [--dir DIR] [--update]
 
-optional arguments:
-  -h, --help  show this help message and exit
-  --dir DIR   the directory to save files, should be absolute path
-  --update    if `--update` exists, remove the old session file
+options:
+  -h, --help         show this help message and exit
+  --dir DIR, -d DIR  the directory to save files, should be absolute path
+  --update, -u       if `--update` exists, remove the old session file
 ```
 
 You can just run:
