@@ -47,6 +47,7 @@ class InsBatchAutoDownloader:
         LOG.info(f'try to login as {self.username}...')
         if os.path.exists(self.session_file) and REMOVE_SESSION:
             os.remove(self.session_file)
+            LOG.info(f'remove old session: {self.session_file}')
         try:
             if os.path.exists(self.session_file):
                 LOG.info(f'find session file: {self.session_file}, try to load session...')
@@ -121,7 +122,7 @@ class InsBatchAutoDownloader:
                     with open(RECORD_FILE, 'w') as f:
                         json.dump(self.record,
                                   f,
-                                  separators=(', ', ': '),
+                                  separators=(',', ': '),
                                   indent=4)
                 except Exception as e:
                     LOG.error(f'fail to renew the record, error: {e}')
@@ -153,7 +154,7 @@ def load_record():
                     "tg_chat_id": "",
                     'downloaded': []
                 }
-                json.dump(default_record, f, separators=(', ', ': '), indent=4)
+                json.dump(default_record, f, separators=(',', ': '), indent=4)
                 LOG.error('please edit record.json first')
             return False
     except Exception as e:
