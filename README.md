@@ -1,14 +1,9 @@
 ## Introduction
 
-You can use this script to download saved posts in your instagram account.
-
-The downloaded posts will be recorded to prevent the script from downloading them again.
-
-After your first login, the script saves the session to file and the next time you login, the script will load the session from file.
-
-Optionally, you can set a telegram bot to notify you about the downloading process, which is helpful if you set a timed task.
-
-You can set a timedtask like the crontab on linux to execute this script regularly.
+- `ins.py` -> download new saved posts in batches
+- `ins_bat_follow.py` -> follow users in batches
+- `ins_get_following.py` -> get the users you are following in instagram
+- `ins_bat_unsave.py` -> unsave the posts in batches
 
 ## Prerequisites
 
@@ -20,20 +15,40 @@ You can set a timedtask like the crontab on linux to execute this script regular
 ```bash
 git clone https://github.com/akynazh/ins-bat # or download this repo
 pip3 install instaloader
-pip3 install pyTelegramBotAPI # optional, do it if you need a telegram bot to notify you
+```
+
+optional, do it if you need a telegram bot to notify you:
+
+```bash
+pip3 install pyTelegramBotAPI
+```
+
+optional, do it if you need the other scripts except `ins.py`:
+
+```bash
+pip3 install instagram_private_api_extensions
+pip3 install instagram_private_api
 ```
 
 ## Usage
 
 ### Edit `{save_dir}/record.json`
 
-- `{save_dir}` is the directory where you save files.
+`{save_dir}` is the directory where you save files.
+
 - username: your instagram username
 - password: your instagram password
-- tg_bot_token: optional, your telegram bot's token
-- tg_chat_id: optional, user id or group id
-- proxy: optional, set your proxy address, such as `http://127.0.0.1:7890` (you can also set your proxy to environment variable)
+
+optional:
+
+- tg_bot_token: your telegram bot's token
+- tg_chat_id: user id or group id
+- proxy: set your proxy address, such as `http://127.0.0.1:7890` (you can also set your proxy to environment variable)
+
+others: (no need to edit)
+
 - downloaded: the downloaded posts' shortcodes
+- following: the users you are following
 
 ```json
 {
@@ -42,11 +57,12 @@ pip3 install pyTelegramBotAPI # optional, do it if you need a telegram bot to no
     "tg_bot_token": "", 
     "tg_chat_id": "",
     "proxy": "",
-    "downloaded": []
+    "downloaded": [],
+    "following": []
 }
 ```
 
-### Run the script
+### Run the script `ins.py`
 
 About `ins.py`:
 
@@ -72,6 +88,16 @@ Then the posts will be saved in `{save_dir}/ins_saved`.
 `--update` is optional too, if you fail to download new posts or load the session, you may add it to update the session.
 
 You can read log in `{save_dir}/log.txt`.
+
+### Run the other scripts
+
+```
+usage: xxx.py [-h] [--dir DIR]
+
+options:
+  -h, --help         show this help message and exit
+  --dir DIR, -d DIR  the directory to save files, should be absolute path
+```
 
 ## Thanks
 

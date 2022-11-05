@@ -150,9 +150,10 @@ def load_record():
                 default_record = {
                     'username': '',
                     'password': '',
-                    "tg_bot_token": "",
-                    "tg_chat_id": "",
-                    'downloaded': []
+                    'tg_bot_token': '',
+                    'tg_chat_id': '',
+                    'downloaded': [],
+                    'following': []
                 }
                 json.dump(default_record, f, separators=(',', ': '), indent=4)
                 LOG.error('please edit record.json first')
@@ -197,7 +198,7 @@ if __name__ == '__main__':
     SAVE_DIR = args.dir
     REMOVE_SESSION = args.update
     RECORD_FILE = SAVE_DIR + '/record.json'
-    LOG_FILE = SAVE_DIR + '/ins_log.txt'
+    LOG_FILE = SAVE_DIR + '/log.txt'
     if not os.path.exists(SAVE_DIR):
         os.makedirs(SAVE_DIR)
 
