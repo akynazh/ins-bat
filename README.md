@@ -1,6 +1,12 @@
 ## Introduction
 
-- `ins.py` -> download new saved posts in batches
+`ins.py`:
+
+- download new saved posts in batches 
+- save login session
+- save downloaded posts
+- a telegram bot, notify you about the result (it's useful if you set a timetask)
+
 - `ins_bat_follow.py` -> follow users in batches
 - `ins_get_following.py` -> get the users you are following in instagram
 - `ins_bat_unsave.py` -> unsave the posts in batches
