@@ -4,7 +4,8 @@ import os
 import threading
 
 class TeleBot:
-    def __init__(self, record, path_media_dir):
+    def __init__(self, logger, record, path_media_dir):
+        self.logger = logger
         self.use_tg_bot = False
         self.tg_bot_token = record['tg_bot_token'] if 'tg_bot_token' in record else ''
         self.tg_chat_id = record['tg_chat_id'] if 'tg_chat_id' in record else ''
@@ -61,4 +62,4 @@ class TeleBot:
                     t.start()
                 for t in send_threads:
                     t.join()
-                self.send_msg(f'[Instagram] sending process completed, total count: {total_count}, success count: {self.send_success_count}.')
+                self.send_msg(f'[Instagram] Sending process completed, total count: {total_count}, success count: {self.send_success_count}.')

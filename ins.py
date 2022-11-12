@@ -1,18 +1,17 @@
-import instaloader
 import os
 import sys
+import json
 import argparse
 import logging
 import threading
+import instaloader
 import instaloader.exceptions as ins_exceptions
-import ins_util_telebot
-import ins_util_recorder
+import ins_telebot
 
 class Logger:
-    def __init__(self, log_file=None, log_level=logging.DEBUG):
+    def __init__(self, log_level):
         self.logger = logging.getLogger()
-        if log_file != None:
-            self.logger.addHandler(self.get_file_handler(file=log_file))
+        self.logger.addHandler(self.get_file_handler(PATH_LOG_FILE))
         self.logger.addHandler(logging.StreamHandler())
         self.logger.setLevel(log_level)
 
@@ -22,8 +21,31 @@ class Logger:
             logging.Formatter('[%(asctime)s] %(levelname)s: %(message)s'))
         return file_handler
 
+def load_record():
+    try:
+        if os.path.exists(PATH_RECORD_FILE):
+            with open(PATH_RECORD_FILE, 'r') as f:
+                record = json.load(f)
+            return True, record
+        else:  # record file does not exist, create and write basic data
+            LOG.error('Record file does not exist, create it. Please edit it first.')
+            with open(PATH_RECORD_FILE, 'w') as f:
+                default_record = {
+                    'username': '',
+                    'password': '',
+                    'tg_bot_token': '',
+                    'tg_chat_id': '',
+                    'proxy': '',
+                    'downloaded': [],
+                }
+                json.dump(default_record, f, separators=(',', ': '), indent=4)
+            return False, None
+    except Exception:
+        return False, None
+
 class MyInstaloader:
-    def __init__(self):
+    def __init__(self, telebot:ins_telebot.TeleBot):
+        self.telebot = telebot
         self.loader = instaloader.Instaloader(quiet=True,
                                               download_video_thumbnails=False,
                                               save_metadata=False,
@@ -31,51 +53,50 @@ class MyInstaloader:
                                               request_timeout=15.0,
                                               max_connection_attempts=3)
         self.record = RECORD
-        self.username = RECORD['username']
-        self.password = RECORD['password']
-        self.downloaded = RECORD['downloaded']
-        self.session_file = f'{SAVE_DIR}/session-{self.username}'
+        self.username = self.record['username']
+        self.password = self.record['password']
+        self.downloaded = self.record['downloaded']
+        self.session_file = f'{PATH_SAVE_DIR}/session-{self.username}'
         self.lock = threading.Lock()
         self.saved_count = 0
 
     def login(self):
-        LOG.info(f'try to login as {self.username}...')
-        if os.path.exists(self.session_file) and REMOVE_SESSION:
+        LOG.info(f'Try to login as {self.username}...')
+        if os.path.exists(self.session_file) and OP_REMOVE_SESSION:
             os.remove(self.session_file)
-            LOG.info(f'remove old session: {self.session_file}.')
+            LOG.info(f'Remove old session: {self.session_file}.')
         try:
             if os.path.exists(self.session_file):
-                LOG.info(f'find session file: {self.session_file}, try to load session...')
+                LOG.info(f'Find session file: {self.session_file}, try to load session...')
                 self.loader.load_session_from_file(self.username, self.session_file)
             else:
                 self.loader.login(self.username, self.password)
                 self.loader.save_session_to_file(self.session_file)
-            LOG.info('login successfully.')
+            LOG.info('Login successfully.')
             return True
-        
         except ins_exceptions.TwoFactorAuthRequiredException:
             two_factor_code = input("Enter 2FA Code: ")
             self.loader.two_factor_login(two_factor_code)
             self.loader.save_session_to_file(self.session_file)
-            LOG.info('login successfully.')
+            LOG.info('Login successfully.')
             return True
         except ins_exceptions.InvalidArgumentException:
-            LOG.error('username does not exist.')
+            LOG.error('Username does not exist.')
             return False
         except ins_exceptions.BadCredentialsException:
-            LOG.error('password is wrong, try to remove the session file or modify your password.')
+            LOG.error('Password is wrong, try to remove the session file or modify your password.')
             return False
         except Exception as e:
-            LOG.error(f'error occurred: {e}.')
+            LOG.error(f'Error occurred: {e}.')
             return False
         except KeyboardInterrupt:
-            LOG.info('exit successfully.')
+            LOG.info('Exit successfully.')
             exit(0)
             
     def download_from_code(self, code):
         post = instaloader.Post.from_shortcode(self.loader.context, code)
-        self.loader.download_post(post, 'ins_saved')
-        LOG.info(f'download successfully, code: {code}.')
+        self.loader.download_post(post, MEDIA_DIR_NAME)
+        LOG.info(f'Download successfully, code: {code}.')
         self.lock.acquire()
         self.downloaded.append(code)
         self.saved_count += 1
@@ -95,8 +116,8 @@ class MyInstaloader:
             new_posts_code = list(set(now_posts_code).difference(set(self.downloaded)))
             if len(new_posts_code) > 0:
                 total_count = len(new_posts_code)
-                LOG.info('find new posts, start to download...')
-                os.chdir(SAVE_DIR)
+                LOG.info('Find new posts, start to download...')
+                os.chdir(PATH_SAVE_DIR)
                 download_threads = []
                 for code in new_posts_code:
                     t = threading.Thread(target=self.download_from_code, args=(code,))
@@ -111,12 +132,13 @@ class MyInstaloader:
             LOG.info('exit successfully.')
             exit(0)
         finally:
-            msg = f'[Instagram] downloading process completed, total count: {total_count}, saved count: {self.saved_count}, error occurred: {error_occurred} ^-^'
+            msg = f'[Instagram] Downloading process completed, total count: {total_count}, saved count: {self.saved_count}, error occurred: {error_occurred} ^-^'
             LOG.info(msg)
-            TeleBot.send_msg(msg)
+            self.telebot.send_msg(msg)
             if self.saved_count > 0:  # if have saved new posts, log and renew record.
                 self.record['downloaded'] = self.downloaded
-                Recorder.update_record(new_record=self.record)
+                with open(PATH_RECORD_FILE, 'w') as f:
+                    json.dump(self.record, f, separators=(',', ': '), indent=4)
 
 def ins_parse_args():
     parser = argparse.ArgumentParser()
@@ -138,34 +160,49 @@ def ins_parse_args():
         action='store_true',
         help='If exists, send the downloaded files to your telegram chat which is specified in record.json and remove those files.'
     )
+    parser.add_argument(
+        '--proxy',
+        '-p',
+        action='store_true',
+        help='If exists, add proxy. Please specify the proxy address in record.json.'
+    )
     return parser.parse_args()
+
+def try_to_add_proxy():
+    if OP_ADD_PROXY and str(RECORD['proxy']).strip() != '':
+        proxy = RECORD['proxy']
+        os.environ['http_proxy'] = proxy
+        os.environ['https_proxy'] = proxy
+        
 
 if __name__ == '__main__':
     args = ins_parse_args()
-    SAVE_DIR = args.dir
-    REMOVE_SESSION = args.update
-    PATH_RECORD_FILE = SAVE_DIR + '/record.json'
-    PATH_MEDIA_DIR = SAVE_DIR + '/ins_saved'
-    PATH_LOG_FILE = SAVE_DIR + '/log.txt'
-    if not os.path.exists(SAVE_DIR):
-        os.makedirs(SAVE_DIR)
-    LOG = Logger(log_file=PATH_LOG_FILE, log_level=logging.INFO).logger
-    Recorder = ins_util_recorder.Recorder(PATH_RECORD_FILE)
-
-    load_success, RECORD = Recorder.load_record()
+    PATH_SAVE_DIR = args.dir
+    OP_REMOVE_SESSION = args.update
+    OP_TG_BOT_SEND = args.send
+    OP_ADD_PROXY = args.proxy
+    
+    if not os.path.exists(PATH_SAVE_DIR):
+        os.makedirs(PATH_SAVE_DIR)
+    
+    MEDIA_DIR_NAME = 'ins_saved'
+    PATH_RECORD_FILE = PATH_SAVE_DIR + '/record.json'
+    PATH_LOG_FILE = PATH_SAVE_DIR + '/ins_log.txt'
+    PATH_MEDIA_DIR = PATH_SAVE_DIR + '/' + MEDIA_DIR_NAME
+        
+    LOG = Logger(log_level=logging.INFO).logger
+    load_success, RECORD = load_record()
     if load_success:
-        if str(RECORD['proxy']).strip() != '':# add proxy
-            proxy = RECORD['proxy']
-            os.environ['http_proxy'] = proxy
-            os.environ['https_proxy'] = proxy
-        TeleBot = ins_util_telebot.TeleBot(RECORD, PATH_MEDIA_DIR)
-        MyInstaloader = MyInstaloader()
-        if MyInstaloader.login():
-            MyInstaloader.download()
-            TeleBot.send_medias()
+        try_to_add_proxy()
+        telebot = ins_telebot.TeleBot(logger=LOG, record=RECORD, path_media_dir=PATH_MEDIA_DIR)
+        my_instaloader = MyInstaloader(telebot)
+        if my_instaloader.login():
+            my_instaloader.download()
+            if OP_TG_BOT_SEND:
+                telebot.send_medias()
         else:
-            msg = '[Instagram] fail to login >_<'
+            msg = '[Instagram] Fail to login >_<'
             LOG.error(msg)
-            TeleBot.send_msg(msg)
+            telebot.send_msg(msg)
     else:
-        LOG.error('fail to load record >_<')
+        LOG.error('Fail to load record >_<')
