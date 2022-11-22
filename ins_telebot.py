@@ -16,38 +16,45 @@ class TeleBot:
             self.use_tg_bot = True
 
     def send_msg(self, msg):
-        if self.use_tg_bot:
-            r = requests.get(
-                f'https://api.telegram.org/bot{self.tg_bot_token}/sendMessage',
-                params={
-                    'text': msg,
-                    'chat_id': self.tg_chat_id
-                })
-            if not r.json()['ok']: return False
-        return True
+        try:
+            if self.use_tg_bot:
+                r = requests.get(
+                    f'https://api.telegram.org/bot{self.tg_bot_token}/sendMessage',
+                    params={
+                        'text': msg,
+                        'chat_id': self.tg_chat_id
+                    })
+                if not r.json()['ok']: 
+                    self.logger.error('Telebot failed to send message')
+        except Exception as e:
+            self.logger.error(f'Telebot failed to send message, error: {e}')
     
     def send_media(self, media_path):
-        if self.use_tg_bot:
-            with open(media_path, 'rb') as f:
-                ft = filetype.guess_mime(media_path).split('/')[0]
-                if ft == 'image': 
-                    type = 'photo'
-                    my_url = f'https://api.telegram.org/bot{self.tg_bot_token}/sendPhoto'
-                elif ft == 'video': 
-                    type = 'video'
-                    my_url = f'https://api.telegram.org/bot{self.tg_bot_token}/sendVideo'
-                r = requests.post(
-                    url=my_url,
-                    params={
-                        'chat_id': self.tg_chat_id
-                    },
-                    files={type: f},
-                )
-            if not r.json()['ok']: return False
-            self.lock.acquire()
-            self.send_success_count += 1
-            self.lock.release()
-        return True
+        try:
+            if self.use_tg_bot:
+                with open(media_path, 'rb') as f:
+                    ft = filetype.guess_mime(media_path).split('/')[0]
+                    if ft == 'image': 
+                        type = 'photo'
+                        my_url = f'https://api.telegram.org/bot{self.tg_bot_token}/sendPhoto'
+                    elif ft == 'video':
+                        type = 'video'
+                        my_url = f'https://api.telegram.org/bot{self.tg_bot_token}/sendVideo'
+                    r = requests.post(
+                        url=my_url,
+                        params={
+                            'chat_id': self.tg_chat_id
+                        },
+                        files={type: f},
+                    )
+                if not r.json()['ok']:
+                    self.logger.error(f'Telebot failed to send media {media_path}')
+                os.remove(media_path)
+                self.lock.acquire()
+                self.send_success_count += 1
+                self.lock.release()
+        except Exception:
+            pass
 
     def send_medias(self):
         if self.use_tg_bot:

@@ -26,6 +26,9 @@ def load_record():
         if os.path.exists(PATH_RECORD_FILE):
             with open(PATH_RECORD_FILE, 'r') as f:
                 record = json.load(f)
+            if record['username'].strip() == '' or record['password'].strip() == '':
+                LOG.info('Please specify your username and password~')
+                return False, None
             return True, record
         else:  # record file does not exist, create and write basic data
             LOG.error('Record file does not exist, create it. Please edit it first.')
@@ -33,18 +36,21 @@ def load_record():
                 default_record = {
                     'username': '',
                     'password': '',
+                    'use_tg_bot': 0,
                     'tg_bot_token': '',
                     'tg_chat_id': '',
-                    'proxy': '',
+                    'use_proxy': 0,
+                    'proxy_addr': '',
                     'downloaded': [],
                 }
                 json.dump(default_record, f, separators=(',', ': '), indent=4)
             return False, None
-    except Exception:
+    except Exception as e:
+        LOG.error(e)
         return False, None
 
 class MyInstaloader:
-    def __init__(self, telebot:ins_telebot.TeleBot):
+    def __init__(self, telebot:ins_telebot.TeleBot=None):
         self.telebot = telebot
         self.loader = instaloader.Instaloader(quiet=True,
                                               download_video_thumbnails=False,
@@ -127,14 +133,14 @@ class MyInstaloader:
                     t.join()
         except Exception as e:
             error_occurred = True
-            LOG.error(f'error occurred: {e}.')
+            LOG.error(f'Error occurred: {e}.')
         except KeyboardInterrupt:
-            LOG.info('exit successfully.')
+            LOG.info('Exit successfully.')
             exit(0)
         finally:
             msg = f'[Instagram] Downloading process completed, total count: {total_count}, saved count: {self.saved_count}, error occurred: {error_occurred} ^-^'
             LOG.info(msg)
-            self.telebot.send_msg(msg)
+            if USE_TG_BOT == 1: self.telebot.send_msg(msg)
             if self.saved_count > 0:  # if have saved new posts, log and renew record.
                 self.record['downloaded'] = self.downloaded
                 with open(PATH_RECORD_FILE, 'w') as f:
@@ -158,29 +164,24 @@ def ins_parse_args():
         '--send',
         '-s',
         action='store_true',
-        help='If exists, send the downloaded files to your telegram chat which is specified in record.json and remove those files.'
-    )
-    parser.add_argument(
-        '--proxy',
-        '-p',
-        action='store_true',
-        help='If exists, add proxy. Please specify the proxy address in record.json.'
+        help='If exists, send the downloaded files to your telegram chat which is specified in record.json and remove those files. (Prerequisite: use telegram bot)'
     )
     return parser.parse_args()
 
 def try_to_add_proxy():
-    if OP_ADD_PROXY and str(RECORD['proxy']).strip() != '':
-        proxy = RECORD['proxy']
+    if str(RECORD['proxy_addr']).strip() != '':
+        proxy = RECORD['proxy_addr']
         os.environ['http_proxy'] = proxy
         os.environ['https_proxy'] = proxy
+        LOG.info('Add proxy successfully.')
+    else: 
+        LOG.error('Fail to add proxy.')
         
-
 if __name__ == '__main__':
     args = ins_parse_args()
     PATH_SAVE_DIR = args.dir
     OP_REMOVE_SESSION = args.update
     OP_TG_BOT_SEND = args.send
-    OP_ADD_PROXY = args.proxy
     
     if not os.path.exists(PATH_SAVE_DIR):
         os.makedirs(PATH_SAVE_DIR)
@@ -193,16 +194,22 @@ if __name__ == '__main__':
     LOG = Logger(log_level=logging.INFO).logger
     load_success, RECORD = load_record()
     if load_success:
-        try_to_add_proxy()
-        telebot = ins_telebot.TeleBot(logger=LOG, record=RECORD, path_media_dir=PATH_MEDIA_DIR)
-        my_instaloader = MyInstaloader(telebot)
+        USE_PROXY = RECORD['use_proxy']
+        USE_TG_BOT = RECORD['use_tg_bot']
+        if USE_PROXY == 1: try_to_add_proxy()
+        if USE_TG_BOT == 1:
+            telebot = ins_telebot.TeleBot(logger=LOG, record=RECORD, path_media_dir=PATH_MEDIA_DIR)
+            my_instaloader = MyInstaloader(telebot)
+        else:
+            my_instaloader = MyInstaloader()
         if my_instaloader.login():
-            my_instaloader.download()
-            if OP_TG_BOT_SEND:
+            # my_instaloader.download()
+            if USE_TG_BOT == 1 and OP_TG_BOT_SEND:
                 telebot.send_medias()
         else:
             msg = '[Instagram] Fail to login >_<'
             LOG.error(msg)
-            telebot.send_msg(msg)
+            if USE_TG_BOT == 1: telebot.send_msg(msg)
     else:
         LOG.error('Fail to load record >_<')
+    LOG.info("Program exited successfully.")

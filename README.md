@@ -1,17 +1,11 @@
 ## Introduction
 
-`ins.py`:
-
 - download new saved posts in batches 
 - save login session
 - save downloaded posts
 - a telegram bot, notify you about the result (it's useful if you set a timetask)
-
-`ins_bat_follow.py` -> follow users in batches
-
-`ins_get_following.py` -> get the users you are following in instagram
-
-`ins_bat_unsave.py` -> unsave the posts in batches
+- a telegram bot, send you the downloaded posts
+- support 2FA
 
 ## Prerequisites
 
@@ -31,42 +25,31 @@ optional, do it if you need a telegram bot to notify you:
 pip3 install pyTelegramBotAPI
 ```
 
-optional, do it if you need the other scripts except `ins.py`:
-
-```bash
-pip3 install instagram_private_api_extensions
-pip3 install instagram_private_api
-```
-
 ## Usage
 
 ### Edit `{save_dir}/record.json`
 
-`{save_dir}` is the directory where you save files.
+`{save_dir}` is the directory where you save files and load files.
 
 - username: your instagram username
 - password: your instagram password
-
-optional:
-
-- tg_bot_token: your telegram bot's token
-- tg_chat_id: user id or group id
-- proxy: set your proxy address, such as `http://127.0.0.1:7890` (you can also set your proxy to environment variable)
-
-others: (no need to edit)
-
+- use_tg_bot: use telegram bot or not, 0: false, 1: true
+- tg_bot_token: your telegram bot's token (prerequsite: use_tg_bot == 1)
+- tg_chat_id: your telegram user id or group id (prerequsite: use_tg_bot == 1)
+- use_proxy: use proxy or not, 0: false, 1: true
+- proxy_addr: set your proxy address, such as `http://127.0.0.1:7890` (you can also set your proxy to environment variable)
 - downloaded: the downloaded posts' shortcodes
-- following: the users you are following
 
 ```json
 {
-    "username": "", 
-    "password": "", 
-    "tg_bot_token": "", 
+    "username": "",
+    "password": "",
+    "use_tg_bot": 0,
+    "tg_bot_token": "",
     "tg_chat_id": "",
-    "proxy": "",
-    "downloaded": [],
-    "following": []
+    "use_proxy": 0,
+    "proxy_addr": "",
+    "downloaded": []
 }
 ```
 
@@ -75,12 +58,15 @@ others: (no need to edit)
 About `ins.py`:
 
 ```
-usage: ins.py [-h] [--dir DIR] [--update]
+usage: ins.py [-h] [--dir DIR] [--update] [--send]
 
 options:
   -h, --help         show this help message and exit
-  --dir DIR, -d DIR  the directory to save files, should be absolute path
-  --update, -u       if `--update` exists, remove the old session file
+  --dir DIR, -d DIR  Specify the directory to save files and load files, should be absolute path, if not specified, the default value is 
+                     the directory where `ins.py` locates in.
+  --update, -u       If exists, remove the old session file.
+  --send, -s         If exists, send the downloaded files to your telegram chat which is specified in record.json and 
+                     remove those files. (Prerequisite: use telegram bot)
 ```
 
 You can just run:
@@ -89,23 +75,9 @@ You can just run:
 python3 ins.py --dir {save_dir}
 ```
 
-Then the posts will be saved in `{save_dir}/ins_saved`.
-
-`--dir {save_dir}` is optional, the default value of {save_dir} is the directory where `ins.py` locates in.
-
-`--update` is optional too, if you fail to download new posts or load the session, you may add it to update the session.
+The posts will be saved in `{save_dir}/ins_saved`.
 
 You can read log in `{save_dir}/log.txt`.
-
-### Run the other scripts
-
-```
-usage: xxx.py [-h] [--dir DIR]
-
-options:
-  -h, --help         show this help message and exit
-  --dir DIR, -d DIR  the directory to save files, should be absolute path
-```
 
 ## Thanks
 
