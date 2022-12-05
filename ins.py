@@ -203,7 +203,7 @@ if __name__ == '__main__':
         else:
             my_instaloader = MyInstaloader()
         if my_instaloader.login():
-            # my_instaloader.download()
+            my_instaloader.download()
             if USE_TG_BOT == 1 and OP_TG_BOT_SEND:
                 telebot.send_medias()
         else:
